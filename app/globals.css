@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@layer utilities {
+  .animate-ripple {
+    animation: ripple 1s cubic-bezier(0, 0, 0.2, 1);
+  }
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+}
+
