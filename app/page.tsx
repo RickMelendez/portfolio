@@ -714,7 +714,7 @@ export default function Home() {
                           "Alerting system with logs and visualization dashboards using Recharts",
                           "Containerized with Docker and deployed via Cloudflare",
                         ]}
-                        link="https://github.com/RickMelendez"
+                        link="https://watchly-8x9.pages.dev"
                       />
                     </Reveal>
                     <Reveal delay={0.3}>
