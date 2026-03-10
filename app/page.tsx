@@ -333,7 +333,7 @@ export default function Home() {
                       }}
                     >
                       <Image
-                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/439be2e9-aab4-4f65-825c-9f67563502dd.jpg-5DLNgyW2GlbpeYSKoezCTV9CaqoFqh.jpeg"
+                        src="/profile.jpg"
                         alt="Ricardo Sánchez Meléndez"
                         width={128}
                         height={128}

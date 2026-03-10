@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { Resend } from "resend"
+import nodemailer from "nodemailer"
 
 export async function POST(req: Request) {
   try {
@@ -9,33 +9,38 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const resend = new Resend(process.env.RESEND_API_KEY)
+    // Configurar transporte de email
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
+      }
+    })
 
     const html = `
       <div>
-        <p><strong>Name:</strong> ${String(name)}</p>
+        <h2>Nuevo mensaje de portfolio</h2>
+        <p><strong>Nombre:</strong> ${String(name)}</p>
         <p><strong>Email:</strong> ${String(email)}</p>
-        <p><strong>Subject:</strong> ${String(subject)}</p>
-        <p><strong>Message:</strong></p>
+        <p><strong>Asunto:</strong> ${String(subject)}</p>
+        <p><strong>Mensaje:</strong></p>
         <p style="white-space: pre-wrap;">${String(message)}</p>
       </div>
     `
 
-    const data = await resend.emails.send({
-      from: "Portfolio <onboarding@resend.dev>",
-      to: ["rickmelendez001@gmail.com"],
-      subject: subject as string,
+    await transporter.sendMail({
+      from: `"Portfolio Contact" <${process.env.GMAIL_USER}>`,
+      to: process.env.GMAIL_USER,
+      subject: `Portfolio: ${String(subject)}`,
       html,
-      reply_to: String(email),
+      replyTo: String(email)
     })
-
-    if ((data as any).error) {
-      return NextResponse.json({ error: (data as any).error }, { status: 500 })
-    }
 
     return NextResponse.json({ ok: true })
   } catch (err) {
-    return NextResponse.json({ error: "Unexpected error" }, { status: 500 })
+    console.error('Error sending email:', err)
+    return NextResponse.json({ error: "Error sending message" }, { status: 500 })
   }
 }
 
