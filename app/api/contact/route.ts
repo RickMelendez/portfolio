@@ -3,7 +3,7 @@ import nodemailer from "nodemailer"
 import { Resend } from "resend"
 
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 export async function POST(req: Request) {
   try {
@@ -34,13 +34,15 @@ export async function POST(req: Request) {
     `
 
     // Opción 1: Enviar usando Resend (Recomendado para producción)
-    const { data: resendData, error: resendError } = await resend.emails.send({
-      from: "Portfolio Contact <onboarding@resend.dev>",
-      to: [process.env.GMAIL_USER!],
-      subject: `Portfolio: ${String(subject)}`,
-      html,
-      reply_to: String(email),
-    })
+    const { data: resendData, error: resendError } = resend 
+      ? await resend.emails.send({
+          from: "Portfolio Contact <onboarding@resend.dev>",
+          to: [process.env.GMAIL_USER!],
+          subject: `Portfolio: ${String(subject)}`,
+          html,
+          reply_to: String(email),
+        })
+      : { data: null, error: { message: "Resend API key missing" } }
 
     if (resendError) {
       console.error('Resend error:', resendError)
