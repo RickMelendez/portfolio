@@ -257,9 +257,17 @@ export default function Home() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (sending) return
-    setSending(true)
-    setStatusMessage(null)
+
+      if (sending) return
+
+      if (!name || !email || !subject || !message) {
+        setStatusMessage("Please fill all fields.")
+        return
+      }
+
+      setSending(true)
+      setStatusMessage(null)
+      
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
@@ -523,7 +531,7 @@ export default function Home() {
                             style={{ background: "#050810" }}
                           >
                             <Image
-                              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/439be2e9-aab4-4f65-825c-9f67563502dd.jpg-5DLNgyW2GlbpeYSKoezCTV9CaqoFqh.jpeg"
+                              src="/profile.jpg"
                               alt="Ricardo Sánchez Meléndez"
                               width={224}
                               height={224}
@@ -752,10 +760,22 @@ export default function Home() {
                     {/* Contact info */}
                     <div className="space-y-3">
                       {[
-                        { icon: <Mail className="h-4 w-4" />, label: "rickmelendez001@gmail.com", href: "mailto:rickmelendez001@gmail.com" },
-                        { icon: <Github className="h-4 w-4" />, label: "github.com/RickMelendez", href: "https://github.com/RickMelendez" },
-                        { icon: <Linkedin className="h-4 w-4" />, label: "linkedin.com/in/ricardosanchez01", href: "https://www.linkedin.com/in/ricardosanchez01" },
-                      ].map((item) => (
+                        {
+                          icon: <Mail className="h-4 w-4" />,
+                          label: "rickmelendez001@gmail.com",
+                          href: "https://mail.google.com/mail/?view=cm&fs=1&to=rickmelendez001@gmail.com"
+                        },
+                        {
+                          icon: <Github className="h-4 w-4" />,
+                          label: "github.com/RickMelendez",
+                          href: "https://github.com/RickMelendez"
+                        },
+                        {
+                          icon: <Linkedin className="h-4 w-4" />,
+                          label: "linkedin.com/in/ricardosanchez01",
+                          href: "https://www.linkedin.com/in/ricardosanchez01"
+                        },
+                        ].map((item) => (
                         <Link
                           key={item.label}
                           href={item.href}
@@ -859,14 +879,23 @@ export default function Home() {
                       />
                       <button
                         type="submit"
-                        className="w-full py-3 rounded-lg font-orbitron font-bold text-xs tracking-widest uppercase text-white transition-all"
+                        disabled={sending}
+                        className="w-full py-3 rounded-lg font-orbitron font-bold text-xs tracking-widest uppercase text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
                           background: "linear-gradient(135deg, #FF6B2B, #FF3131)",
                           boxShadow: "0 0 20px rgba(255,107,43,0.3)",
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 0 35px rgba(255,107,43,0.5)" }}
-                        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 0 20px rgba(255,107,43,0.3)" }}
-                      >
+                        onMouseEnter={(e) => {
+                          if (!sending) {
+                            e.currentTarget.style.boxShadow = "0 0 35px rgba(255,107,43,0.5)"
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!sending) {
+                            e.currentTarget.style.boxShadow = "0 0 20px rgba(255,107,43,0.3)"
+                          }
+                        }}
+                        >
                         {sending ? "Sending..." : "Send Message"}
                       </button>
                       {statusMessage && (
