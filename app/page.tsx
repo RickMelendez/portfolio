@@ -727,16 +727,16 @@ export default function Home() {
                     </Reveal>
                     <Reveal delay={0.3}>
                       <ProjectCard
-                        title="HBnB Evolution"
-                        description="Full-stack Airbnb-style application with REST APIs, JWT authentication, and production-grade deployment."
-                        stack={["Python", "Flask", "SQLAlchemy", "PostgreSQL", "Docker", "JWT", "Nginx", "Gunicorn"]}
+                        title="BarberMate"
+                        description="Full-stack barber appointment booking platform that allows customers to create accounts and access a secure authentication system for booking and managing barber appointments."
+                        stack={["Next.js", "React", "TypeScript", "TailwindCSS", "Vercel"]}
                         points={[
-                          "REST APIs supporting users, places, reviews, and amenities",
-                          "Database schemas with SQLAlchemy ORM and PostgreSQL persistence",
-                          "Secure JWT authentication with role-based access control",
-                          "Deployed with Docker, Nginx as reverse proxy, and Gunicorn WSGI",
+                          "Secure authentication system",
+                          "Customer account creation and login",
+                          "Appointment booking platform (future features)",
+                          "Clean and responsive UI for booking services",
                         ]}
-                        link="https://github.com/RickMelendez"
+                        link="https://barbermate-app.vercel.app/auth"
                       />
                     </Reveal>
                   </div>
