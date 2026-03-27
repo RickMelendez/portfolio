@@ -356,7 +356,7 @@ export default function BlackHolePortal() {
                       </div>
                       <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: "1.8rem", letterSpacing: ".02em", textTransform: "uppercase", color: "rgba(240,238,255,.35)" }}>[ CLASSIFIED ]</div>
                       <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>
-                        {["PUZZLE", "WEB", "CONCEPT"].map(t => <span key={t} style={{ fontFamily: "'Fira Code',monospace", fontSize: ".65rem", letterSpacing: ".1em", padding: ".18rem .5rem", border: "1px solid rgba(255,255,255,.06)", color: "rgba(240,238,255,.45)" }}>{t}</span>)}
+                        {["ADVENTURE", "PC", "CONCEPT"].map(t => <span key={t} style={{ fontFamily: "'Fira Code',monospace", fontSize: ".65rem", letterSpacing: ".1em", padding: ".18rem .5rem", border: "1px solid rgba(255,255,255,.06)", color: "rgba(240,238,255,.45)" }}>{t}</span>)}
                       </div>
                       <div style={{ fontFamily: "'Fira Code',monospace", fontSize: ".62rem", letterSpacing: ".14em", color: "rgba(232,255,0,.5)" }}>◌ EARLY CONCEPT</div>
                     </div>
