@@ -8,6 +8,7 @@ import { Github, Linkedin, Mail, Download, ExternalLink, MapPin, ChevronDown } f
 import { Button } from "@/components/ui/button"
 import BootScreen from "@/components/BootScreen"
 import StarField from "@/components/StarField"
+import BlackHolePortal from "@/components/BlackHolePortal"
 import { GooeyText } from "@/components/ui/gooey-text-morphing"
 import { SocialIcons } from "@/components/ui/social-icons"
 
@@ -302,6 +303,7 @@ export default function Home() {
             className="relative"
           >
             <StarField />
+            <BlackHolePortal />
 
             {/* Grid overlay */}
             <div
