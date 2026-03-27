@@ -3,15 +3,6 @@
 import { useRef, useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "motion/react"
 
-/* ─── other projects data ──────────────────────────────────────────── */
-const OTHER_PROJECTS = [
-  { name: "AtlasAI",          desc: "Agentic AI with persistent memory and multi-skill orchestration.", tag: "AI AGENT · NODE.JS" },
-  { name: "Labia.AI",         desc: "Full-stack AI platform with containerised agents and real-time UI.", tag: "DOCKER · FULL-STACK" },
-  { name: "finPulse",         desc: "Personal finance tracker with AI-powered spending insights.",       tag: "REACT · AI" },
-  { name: "TikTok Pipeline",  desc: "Faceless video pipeline: GPT-4 → ElevenLabs → DALL·E → publish.",  tag: "N8N · GPT-4" },
-  { name: "SmartType",        desc: "System-wide AI typing assistant that runs in the background.",      tag: "ELECTRON" },
-  { name: "Watchly",          desc: "Website uptime monitor with real-time alerts and status pages.",    tag: "NODE.JS · REAL-TIME" },
-]
 
 /* ─── CRMBL canvas simulation ──────────────────────────────────────── */
 function useCRMBLCanvas(
@@ -422,21 +413,6 @@ export default function BlackHolePortal() {
                 </div>
               </div>
 
-              {/* ── Other projects ── */}
-              <div style={{ fontFamily:"'Share Tech Mono',monospace", fontSize:".58rem", letterSpacing:".28em", color:"rgba(80,220,160,.35)", marginBottom:"1rem", display:"flex", alignItems:"center", gap:"1rem" }}>
-                // OTHER BUILDS
-                <div style={{ flex:1, height:1, background:"rgba(80,220,160,.08)" }} />
-              </div>
-
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))", gap:1, background:"rgba(80,220,160,.05)", border:"1px solid rgba(80,220,160,.05)" }}>
-                {OTHER_PROJECTS.map(p => (
-                  <div key={p.name} style={{ background:"#060a10", padding:"1.3rem" }}>
-                    <div style={{ fontFamily:"'VT323',monospace", fontSize:"1.5rem", color:"#e8eaf0", marginBottom:".35rem", lineHeight:1 }}>{p.name}</div>
-                    <div style={{ fontFamily:"'Share Tech Mono',monospace", fontSize:".56rem", color:"#556070", lineHeight:1.65 }}>{p.desc}</div>
-                    <span style={{ display:"inline-block", marginTop:".6rem", fontFamily:"'Share Tech Mono',monospace", fontSize:".48rem", color:"rgba(80,220,160,.4)", letterSpacing:".1em" }}>{p.tag}</span>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* Status bar */}
