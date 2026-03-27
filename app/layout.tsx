@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Orbitron, Inter, VT323, Share_Tech_Mono } from 'next/font/google'
+import { Orbitron, Inter, Barlow_Condensed, Barlow, Fira_Code } from 'next/font/google'
 import './globals.css'
 
 const orbitron = Orbitron({
@@ -14,17 +14,24 @@ const inter = Inter({
   display: 'swap',
 })
 
-const vt323 = VT323({
+const barlowCondensed = Barlow_Condensed({
   subsets: ['latin'],
-  weight: '400',
-  variable: '--font-vt323',
+  weight: ['300', '400', '600', '700', '800', '900'],
+  variable: '--font-barlow-condensed',
   display: 'swap',
 })
 
-const shareTechMono = Share_Tech_Mono({
+const barlow = Barlow({
   subsets: ['latin'],
-  weight: '400',
-  variable: '--font-share-tech-mono',
+  weight: ['400', '500'],
+  variable: '--font-barlow',
+  display: 'swap',
+})
+
+const firaCode = Fira_Code({
+  subsets: ['latin'],
+  weight: ['300', '400', '500'],
+  variable: '--font-fira-code',
   display: 'swap',
 })
 
@@ -39,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${orbitron.variable} ${inter.variable} ${vt323.variable} ${shareTechMono.variable}`}>
+    <html lang="en" className={`${orbitron.variable} ${inter.variable} ${barlowCondensed.variable} ${barlow.variable} ${firaCode.variable}`}>
       <body className="font-inter antialiased">{children}</body>
     </html>
   )

@@ -3,164 +3,140 @@
 import { useRef, useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "motion/react"
 
+/* ─── skills marquee data ──────────────────────────────────────────── */
+const SKILLS = [
+  "Python", "Pygame", "Game Design", "Grid Systems",
+  "Procedural Generation", "Cellular Automata", "Game Loop Architecture",
+  "Collision Detection", "AI Pathfinding", "Pixel Art",
+  "Unity (Learning)", "Game Math", "Level Design",
+]
 
-/* ─── CRMBL canvas simulation ──────────────────────────────────────── */
-function useCRMBLCanvas(
-  canvasRef: React.RefObject<HTMLCanvasElement | null>,
-  active: boolean
-) {
+/* ─── canvas hooks ─────────────────────────────────────────────────── */
+function useCRMBLCanvas(ref: React.RefObject<HTMLCanvasElement | null>, active: boolean) {
   useEffect(() => {
-    if (!active || !canvasRef.current) return
-    const canvas = canvasRef.current
+    if (!active || !ref.current) return
+    const canvas = ref.current
     const ctx = canvas.getContext("2d")!
-    const COLS = 18, ROWS = 14
-    const EMPTY = 0, ACTIVE_CELL = 1, CORRUPT = 2, PART = 3
+    const COLS = 22, ROWS = 12
+    const EMPTY = 0, ACTIVE_C = 1, CORRUPT = 2, PART = 3
     type Cell = 0 | 1 | 2 | 3
+    let grid: Cell[][], char = { row: ROWS - 3, col: Math.floor(COLS / 2) }
+    let frame = 0, raf = 0
 
-    let grid: Cell[][]
-    let char = { row: ROWS - 3, col: Math.floor(COLS / 2) }
-    let frameCount = 0
-    let rafId = 0
-
-    const resize = () => {
-      canvas.width  = canvas.offsetWidth
-      canvas.height = canvas.offsetHeight
-    }
-
+    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight }
     const initGrid = () => {
       grid = Array.from({ length: ROWS }, () => new Array(COLS).fill(EMPTY)) as Cell[][]
-      const seeds = [[0,0],[0,1],[1,0],[0,COLS-1],[1,COLS-1],[ROWS-1,0],[ROWS-2,0]]
-      seeds.forEach(([r,c]) => (grid[r][c] = CORRUPT))
-      for (let i = 0; i < 8; i++) {
-        let r: number, c: number
-        do { r = Math.floor(Math.random()*ROWS); c = Math.floor(Math.random()*COLS) }
-        while (grid[r][c] !== EMPTY || (r === char.row && c === char.col))
-        grid[r][c] = PART
-      }
-      for (let i = 0; i < 10; i++) {
-        let r: number, c: number
-        do { r = Math.floor(Math.random()*ROWS); c = Math.floor(Math.random()*COLS) }
-        while (grid[r][c] !== EMPTY || (r === char.row && c === char.col))
-        grid[r][c] = ACTIVE_CELL
-      }
+        ;[[0, 0], [0, 1], [1, 0], [0, COLS - 1], [1, COLS - 1], [ROWS - 1, 0], [ROWS - 2, 0], [ROWS - 1, COLS - 1]].forEach(([r, c]) => grid[r][c] = CORRUPT)
+      for (let i = 0; i < 8; i++) { let r: number, c: number; do { r = ~~(Math.random() * ROWS); c = ~~(Math.random() * COLS) } while (grid[r][c] || (r === char.row && c === char.col)); grid[r][c] = PART }
+      for (let i = 0; i < 12; i++) { let r: number, c: number; do { r = ~~(Math.random() * ROWS); c = ~~(Math.random() * COLS) } while (grid[r][c] || (r === char.row && c === char.col)); grid[r][c] = ACTIVE_C }
     }
-
-    const spreadCorruption = () => {
-      const dirs = [[-1,0],[1,0],[0,-1],[0,1]]
-      const cands: [number,number][] = []
-      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
-        if (grid[r][c] === CORRUPT) {
-          dirs.forEach(([dr,dc]) => {
-            const nr=r+dr, nc=c+dc
-            if (nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&grid[nr][nc]===EMPTY) cands.push([nr,nc])
-          })
-        }
-      }
-      if (cands.length && Math.random() < 0.4) {
-        const [r,c] = cands[Math.floor(Math.random()*cands.length)]
-        grid[r][c] = CORRUPT
-      }
+    const spread = () => {
+      const d = [[-1, 0], [1, 0], [0, -1], [0, 1]], cands: number[][] = []
+      for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++)if (grid[r][c] === CORRUPT) d.forEach(([dr, dc]) => { const nr = r + dr, nc = c + dc; if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !grid[nr][nc]) cands.push([nr, nc]) })
+      if (cands.length && Math.random() < .35) { const [r, c] = cands[~~(Math.random() * cands.length)]; grid[r][c] = CORRUPT }
     }
-
-    const moveChar = () => {
-      const dirs = [[-1,0],[1,0],[0,-1],[0,1]]
-      const passable = dirs.filter(([dr,dc]) => {
-        const nr=char.row+dr, nc=char.col+dc
-        return nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&grid[nr][nc]!==ACTIVE_CELL&&grid[nr][nc]!==CORRUPT
-      })
-      if (!passable.length) return
-      let best: [number,number]|null = null, bestDist = Infinity
-      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
-        if (grid[r][c]===PART) {
-          const d = Math.abs(r-char.row)+Math.abs(c-char.col)
-          if (d < bestDist) { bestDist=d; best=[r,c] }
-        }
-      }
-      if (best) {
-        passable.sort(([a0,a1],[b0,b1]) =>
-          (Math.abs((char.row+a0)-best![0])+Math.abs((char.col+a1)-best![1])) -
-          (Math.abs((char.row+b0)-best![0])+Math.abs((char.col+b1)-best![1])) +
-          (Math.random()-0.5)*2
-        )
-      }
-      const [dr,dc] = passable[0]
-      char.row += dr; char.col += dc
-      if (grid[char.row][char.col]===PART) {
-        grid[char.row][char.col] = EMPTY
-      }
+    const move = () => {
+      const d = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+      const pass = d.filter(([dr, dc]) => { const nr = char.row + dr, nc = char.col + dc; return nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && grid[nr][nc] !== ACTIVE_C && grid[nr][nc] !== CORRUPT })
+      if (!pass.length) return
+      let best: number[] | null = null, bd = Infinity
+      for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++)if (grid[r][c] === PART) { const dist = Math.abs(r - char.row) + Math.abs(c - char.col); if (dist < bd) { bd = dist; best = [r, c] } }
+      if (best) pass.sort(([a0, a1], [b0, b1]) => Math.abs((char.row + a0) - best![0]) + Math.abs((char.col + a1) - best![1]) - Math.abs((char.row + b0) - best![0]) - Math.abs((char.col + b1) - best![1]) + (Math.random() - .5) * 2)
+      char.row += pass[0][0]; char.col += pass[0][1]
+      if (grid[char.row][char.col] === PART) grid[char.row][char.col] = EMPTY
     }
-
     const draw = () => {
-      const cw = (canvas.width  - 20) / COLS
-      const ch = (canvas.height - 20) / ROWS
-      const ox = 10, oy = 10
-      const t  = frameCount * 0.04
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      ctx.fillStyle = "#04060c"
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-      ctx.strokeStyle = "rgba(20,26,40,0.8)"
-      ctx.lineWidth = 0.5
-      for (let r=0;r<=ROWS;r++) {
-        ctx.beginPath(); ctx.moveTo(ox, oy+r*ch); ctx.lineTo(ox+COLS*cw, oy+r*ch); ctx.stroke()
+      const cw = (canvas.width - 16) / COLS, ch = (canvas.height - 16) / ROWS, ox = 8, oy = 8, t = frame * .04
+      ctx.fillStyle = "#030208"; ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.strokeStyle = "rgba(18,14,36,.9)"; ctx.lineWidth = .5
+      for (let r = 0; r <= ROWS; r++) { ctx.beginPath(); ctx.moveTo(ox, oy + r * ch); ctx.lineTo(ox + COLS * cw, oy + r * ch); ctx.stroke() }
+      for (let c = 0; c <= COLS; c++) { ctx.beginPath(); ctx.moveTo(ox + c * cw, oy); ctx.lineTo(ox + c * cw, oy + ROWS * ch); ctx.stroke() }
+      for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++) {
+        const x = ox + c * cw + 1, y = oy + r * ch + 1, w = cw - 2, h = ch - 2
+        if (grid[r][c] === ACTIVE_C) { ctx.fillStyle = `rgba(50,40,90,${.5 + .2 * Math.sin(t + r + c)})`; ctx.fillRect(x, y, w, h) }
+        else if (grid[r][c] === CORRUPT) { ctx.fillStyle = `rgba(200,20,30,${.65 + .25 * Math.sin(t * 2 + r * .5 + c * .3)})`; ctx.shadowColor = "#c01428"; ctx.shadowBlur = 5; ctx.fillRect(x, y, w, h); ctx.shadowBlur = 0 }
+        else if (grid[r][c] === PART) { const s = .7 + .3 * Math.sin(t * 3 + r + c); ctx.fillStyle = `rgba(232,255,0,${s})`; ctx.shadowColor = "#e8ff00"; ctx.shadowBlur = 8; ctx.fillRect(x + w * .25, y + h * .25, w * .5, h * .5); ctx.shadowBlur = 0 }
       }
-      for (let c=0;c<=COLS;c++) {
-        ctx.beginPath(); ctx.moveTo(ox+c*cw, oy); ctx.lineTo(ox+c*cw, oy+ROWS*ch); ctx.stroke()
-      }
-
-      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
-        const x=ox+c*cw+1, y=oy+r*ch+1, w=cw-2, h=ch-2
-        if (grid[r][c]===ACTIVE_CELL) {
-          ctx.fillStyle = `rgba(55,75,100,${0.4+0.2*Math.sin(t+r+c)})`
-          ctx.fillRect(x,y,w,h)
-        } else if (grid[r][c]===CORRUPT) {
-          const p = 0.7+0.3*Math.sin(t*2+r*0.5+c*0.3)
-          ctx.fillStyle = `rgba(140,18,26,${p})`
-          ctx.shadowColor = "#a01920"; ctx.shadowBlur = 4
-          ctx.fillRect(x,y,w,h)
-          ctx.shadowBlur = 0
-        } else if (grid[r][c]===PART) {
-          const s = 0.7+0.3*Math.sin(t*3+r+c)
-          ctx.fillStyle = `rgba(220,195,50,${s})`
-          ctx.shadowColor = "#dcc950"; ctx.shadowBlur = 6
-          ctx.fillRect(x+w*.25, y+h*.25, w*.5, h*.5)
-          ctx.shadowBlur = 0
-        }
-      }
-
-      const cx2 = ox+char.col*cw+cw/2
-      const cy2 = oy+char.row*ch+ch/2
-      const cr  = Math.min(cw,ch)*(0.30+(0.04*Math.sin(t*4)))
-      ctx.beginPath(); ctx.arc(cx2,cy2,cr,0,Math.PI*2)
-      ctx.fillStyle = "#50dca0"
-      ctx.shadowColor = "#50dca0"; ctx.shadowBlur = 12
-      ctx.fill(); ctx.shadowBlur = 0
+      const cx = ox + char.col * cw + cw / 2, cy = oy + char.row * ch + ch / 2, cr = Math.min(cw, ch) * (.28 + .04 * Math.sin(t * 4))
+      ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2)
+      ctx.fillStyle = "#e8ff00"; ctx.shadowColor = "#e8ff00"; ctx.shadowBlur = 14; ctx.fill(); ctx.shadowBlur = 0
+      frame++
     }
-
-    const tick = () => {
-      frameCount++
-      if (frameCount % 28  === 0) moveChar()
-      if (frameCount % 90  === 0) spreadCorruption()
-      draw()
-      rafId = requestAnimationFrame(tick)
-    }
-
-    resize()
-    initGrid()
-    rafId = requestAnimationFrame(tick)
+    const tick = () => { frame++; if (frame % 30 === 0) move(); if (frame % 90 === 0) spread(); draw(); raf = requestAnimationFrame(tick) }
+    resize(); initGrid(); raf = requestAnimationFrame(tick)
     window.addEventListener("resize", resize)
-    return () => { cancelAnimationFrame(rafId); window.removeEventListener("resize", resize) }
-  }, [active, canvasRef])
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize) }
+  }, [active, ref])
 }
 
-/* ─── main component ───────────────────────────────────────────────── */
+function useParticleCanvas(ref: React.RefObject<HTMLCanvasElement | null>, active: boolean) {
+  useEffect(() => {
+    if (!active || !ref.current) return
+    const canvas = ref.current
+    const ctx = canvas.getContext("2d")!
+    let particles: { x: number, y: number, vx: number, vy: number, r: number, a: number }[] = []
+    let raf = 0
+    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight }
+    const init = () => {
+      particles = Array.from({ length: 30 }, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, vx: (Math.random() - .5) * .6, vy: (Math.random() - .5) * .6, r: Math.random() * 1.5 + .5, a: Math.random() }))
+    }
+    const tick = () => {
+      ctx.fillStyle = "rgba(3,2,8,.3)"; ctx.fillRect(0, 0, canvas.width, canvas.height)
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.a += .015
+        if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0
+        if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0
+        const a = (.4 + .4 * Math.sin(p.a)) * .35
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fillStyle = `rgba(56,189,248,${a})`; ctx.fill()
+      })
+      for (let i = 0; i < particles.length; i++)for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y, dist = Math.sqrt(dx * dx + dy * dy)
+        if (dist < 50) { ctx.strokeStyle = `rgba(56,189,248,${(.25 * (1 - dist / 50)) * .3})`; ctx.lineWidth = .5; ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke() }
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    resize(); init(); raf = requestAnimationFrame(tick)
+    window.addEventListener("resize", () => { resize(); init() })
+    return () => { cancelAnimationFrame(raf) }
+  }, [active, ref])
+}
+
+function useHexCanvas(ref: React.RefObject<HTMLCanvasElement | null>, active: boolean) {
+  useEffect(() => {
+    if (!active || !ref.current) return
+    const canvas = ref.current
+    const ctx = canvas.getContext("2d")!
+    let t = 0, raf = 0
+    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight }
+    const tick = () => {
+      t += .008
+      ctx.fillStyle = "#030208"; ctx.fillRect(0, 0, canvas.width, canvas.height)
+      const size = 22, cols = Math.ceil(canvas.width / size) + 2, rows = Math.ceil(canvas.height / size) + 2
+      for (let r = 0; r < rows; r++)for (let c = 0; c < cols; c++) {
+        const x = c * size, y = r * size, wave = Math.sin(t + r * .4 + c * .3), a = (.08 + .06 * wave) * .8
+        ctx.strokeStyle = `rgba(167,139,250,${a})`; ctx.lineWidth = .5; ctx.beginPath()
+        for (let i = 0; i < 6; i++) { const ang = Math.PI / 3 * i + t * .2; ctx.lineTo(x + size * .45 * Math.cos(ang), y + size * .45 * Math.sin(ang)) }
+        ctx.closePath(); ctx.stroke()
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    resize(); raf = requestAnimationFrame(tick)
+    window.addEventListener("resize", resize)
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize) }
+  }, [active, ref])
+}
+
+/* ─── component ────────────────────────────────────────────────────── */
 export default function BlackHolePortal() {
   const [mode, setMode] = useState<"idle" | "sucking" | "gamedev">("idle")
-  const bhRef    = useRef<HTMLDivElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const bhRef = useRef<HTMLDivElement>(null)
+  const crmblRef = useRef<HTMLCanvasElement>(null)
+  const particleRef = useRef<HTMLCanvasElement>(null)
+  const hexRef = useRef<HTMLCanvasElement>(null)
 
-  useCRMBLCanvas(canvasRef, mode === "gamedev")
+  useCRMBLCanvas(crmblRef, mode === "gamedev")
+  useParticleCanvas(particleRef, mode === "gamedev")
+  useHexCanvas(hexRef, mode === "gamedev")
 
   const enter = useCallback(() => {
     if (mode !== "idle") return
@@ -168,48 +144,33 @@ export default function BlackHolePortal() {
     setTimeout(() => setMode("gamedev"), 1100)
   }, [mode])
 
-  const returnToMain = useCallback(() => {
-    setMode("idle")
-  }, [])
+  const returnToMain = useCallback(() => setMode("idle"), [])
 
   return (
     <>
-      {/* ── keyframe styles ── */}
       <style>{`
-        @keyframes bh-disk-spin  { to { transform: rotate(360deg); } }
-        @keyframes bh-ring1      { to { transform: rotate(360deg); } }
-        @keyframes bh-ring2      { to { transform: rotate(-360deg); } }
-        @keyframes bh-halo-pulse {
-          0%,100% { transform:scale(.95); opacity:.6; }
-          50%     { transform:scale(1.1); opacity:1; }
-        }
-        @keyframes bh-swallow {
-          0%   { transform:scale(1); }
-          30%  { transform:scale(2.5); }
-          60%  { transform:scale(10); }
-          100% { transform:scale(45); opacity:.9; }
-        }
-        @keyframes vt-glitch {
-          0%,90%,100% { text-shadow:0 0 24px rgba(80,220,160,.38); transform:none; }
-          91% { text-shadow:-3px 0 #a01920, 3px 0 #dcc950; transform:skewX(-4deg); }
-          92% { text-shadow: 3px 0 #50dca0; transform:skewX(2deg); }
-          93% { text-shadow:0 0 24px rgba(80,220,160,.38); transform:none; }
-        }
-        @keyframes badge-blink {
-          0%,100% { border-color:rgba(80,220,160,.3); }
-          50%     { border-color:rgba(80,220,160,.06); }
-        }
-        @keyframes scanlines-move {
-          from { background-position: 0 0; }
-          to   { background-position: 0 120px; }
-        }
-        .bh-wrap:hover .bh-disk  { animation-duration:.6s !important; }
-        .bh-wrap:hover .bh-ring1 { animation-duration:1.2s !important; }
-        .bh-wrap:hover .bh-ring2 { animation-duration:.9s !important; }
-        .bh-wrap:hover .bh-label { opacity:1 !important; }
+        @keyframes bh-disk-spin  { to { transform:rotate(360deg); } }
+        @keyframes bh-ring1      { to { transform:rotate(360deg); } }
+        @keyframes bh-ring2      { to { transform:rotate(-360deg); } }
+        @keyframes bh-halo-pulse { 0%,100%{transform:scale(.95);opacity:.6} 50%{transform:scale(1.1);opacity:1} }
+        @keyframes bh-swallow    { 0%{transform:scale(1)} 30%{transform:scale(2.5)} 60%{transform:scale(10)} 100%{transform:scale(45);opacity:.9} }
+        @keyframes gd-marquee    { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+        @keyframes gd-blink-border { 0%,100%{border-color:rgba(232,255,0,.2)} 50%{border-color:rgba(232,255,0,.05)} }
+        @keyframes gd-blink-dot  { 0%,100%{opacity:1} 50%{opacity:.1} }
+        @keyframes gd-badge-pulse{ 0%,100%{opacity:1} 50%{opacity:.3} }
+        @keyframes gd-bar-scan   { from{transform:translateX(-100%) scaleX(.5);opacity:0} 50%{opacity:1} to{transform:translateX(200%) scaleX(.5);opacity:0} }
+        @keyframes gd-loading    { 0%,100%{opacity:.3} 50%{opacity:.7} }
+        @keyframes gd-fade-up    { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        .bh-wrap:hover .bh-disk  { animation-duration:.6s !important }
+        .bh-wrap:hover .bh-r1    { animation-duration:1.2s !important }
+        .bh-wrap:hover .bh-r2    { animation-duration:.9s !important }
+        .bh-wrap:hover .bh-lbl   { opacity:1 !important }
+        .gd-tool-card:hover      { background:#0f0c24 !important }
+        .gd-upcoming:hover       { background:#0e0b22 !important }
+        .gd-featured:hover       { background:#0f0c24 !important }
       `}</style>
 
-      {/* ── Black hole (fixed, top-right) ── */}
+      {/* ── Black hole ── */}
       <AnimatePresence>
         {mode !== "gamedev" && (
           <motion.div
@@ -217,217 +178,235 @@ export default function BlackHolePortal() {
             className="bh-wrap"
             onClick={enter}
             initial={{ opacity: 0, scale: 0.5 }}
-            animate={
-              mode === "sucking"
-                ? { scale: 45, opacity: 0.9, transition: { duration: 1.1, ease: [0.6, 0.04, 0.98, 0.335] } }
-                : { opacity: 1, scale: 1, transition: { duration: 0.6, delay: 0.3 } }
-            }
+            animate={mode === "sucking"
+              ? { scale: 45, opacity: .9, transition: { duration: 1.1, ease: [0.6, 0.04, 0.98, 0.335] } }
+              : { opacity: 1, scale: 1, transition: { duration: 0.6, delay: 0.3 } }}
             exit={{ opacity: 0 }}
             style={{
-              position: "fixed",
-              top: "7%",
-              right: "7%",
-              width: 116,
-              height: 116,
-              zIndex: 50,
+              position: "fixed", top: "7%", right: "7%", width: 116, height: 116, zIndex: 50,
               cursor: mode === "sucking" ? "default" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              pointerEvents: mode === "sucking" ? "none" : "auto",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              pointerEvents: mode === "sucking" ? "none" : "auto"
             }}
           >
-            {/* Halo glow */}
-            <div style={{
-              position:"absolute", width:180, height:180, borderRadius:"50%",
-              background:"radial-gradient(circle,transparent 30%,rgba(212,70,10,.07) 52%,rgba(212,70,10,.03) 68%,transparent 80%)",
-              animation:"bh-halo-pulse 4s ease-in-out infinite",
-              pointerEvents:"none",
-            }} />
-            {/* Accretion disk */}
-            <div className="bh-disk" style={{
-              position:"absolute", width:108, height:108, borderRadius:"50%",
-              background:"conic-gradient(from 0deg,transparent 0deg,rgba(212,70,10,.18) 50deg,rgba(220,150,40,.3) 110deg,rgba(212,70,10,.12) 170deg,transparent 230deg,rgba(180,50,10,.22) 290deg,transparent 360deg)",
-              animation:"bh-disk-spin 2.8s linear infinite",
-              filter:"blur(1.5px)",
-            }} />
-            {/* Ring 1 */}
-            <div className="bh-ring1" style={{
-              position:"absolute", width:116, height:116, borderRadius:"50%",
-              border:"1.5px solid rgba(212,70,10,.65)",
-              animation:"bh-ring1 7s linear infinite",
-              boxShadow:"0 0 10px rgba(212,70,10,.35)",
-            }} />
-            {/* Ring 2 */}
-            <div className="bh-ring2" style={{
-              position:"absolute", width:94, height:94, borderRadius:"50%",
-              border:"1px solid rgba(220,140,40,.4)",
-              animation:"bh-ring2 5s linear infinite",
-            }} />
-            {/* Event horizon */}
-            <div style={{
-              position:"absolute", width:54, height:54, borderRadius:"50%",
-              background:"radial-gradient(circle at 38% 36%,#1c1e30 0%,#06070c 50%,#000 100%)",
-              boxShadow:"0 0 18px 5px rgba(212,70,10,.28),0 0 42px 12px rgba(212,70,10,.08),inset 0 0 24px #000",
-              zIndex:2,
-            }} />
-            {/* Label */}
-            <span className="bh-label" style={{
-              position:"absolute", bottom:-26, left:"50%", transform:"translateX(-50%)",
-              fontFamily:"'Share Tech Mono',monospace", fontSize:"0.52rem",
-              letterSpacing:"0.14em", color:"rgba(212,70,10,.55)",
-              whiteSpace:"nowrap", opacity:0,
-              transition:"opacity 0.25s", pointerEvents:"none",
-            }}>◈ GAME DEV MODE</span>
+            <div style={{ position: "absolute", width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle,transparent 30%,rgba(212,70,10,.07) 52%,rgba(212,70,10,.03) 68%,transparent 80%)", animation: "bh-halo-pulse 4s ease-in-out infinite", pointerEvents: "none" }} />
+            <div className="bh-disk" style={{ position: "absolute", width: 108, height: 108, borderRadius: "50%", background: "conic-gradient(from 0deg,transparent 0deg,rgba(212,70,10,.18) 50deg,rgba(220,150,40,.3) 110deg,rgba(212,70,10,.12) 170deg,transparent 230deg,rgba(180,50,10,.22) 290deg,transparent 360deg)", animation: "bh-disk-spin 2.8s linear infinite", filter: "blur(1.5px)" }} />
+            <div className="bh-r1" style={{ position: "absolute", width: 116, height: 116, borderRadius: "50%", border: "1.5px solid rgba(212,70,10,.65)", animation: "bh-ring1 7s linear infinite", boxShadow: "0 0 10px rgba(212,70,10,.35)" }} />
+            <div className="bh-r2" style={{ position: "absolute", width: 94, height: 94, borderRadius: "50%", border: "1px solid rgba(220,140,40,.4)", animation: "bh-ring2 5s linear infinite" }} />
+            <div style={{ position: "absolute", width: 54, height: 54, borderRadius: "50%", background: "radial-gradient(circle at 38% 36%,#1c1e30 0%,#06070c 50%,#000 100%)", boxShadow: "0 0 18px 5px rgba(212,70,10,.28),0 0 42px 12px rgba(212,70,10,.08),inset 0 0 24px #000", zIndex: 2 }} />
+            <span className="bh-lbl" style={{ position: "absolute", bottom: -26, left: "50%", transform: "translateX(-50%)", fontFamily: "'Fira Code',monospace", fontSize: ".52rem", letterSpacing: ".14em", color: "rgba(212,70,10,.55)", whiteSpace: "nowrap", opacity: 0, transition: "opacity .25s", pointerEvents: "none" }}>◈ GAME DEV MODE</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Game Dev Portal overlay ── */}
+      {/* ── Game Dev Portal v2 ── */}
       <AnimatePresence>
         {mode === "gamedev" && (
           <motion.div
-            key="gamedev"
-            initial={{ opacity: 0, scale: 1.06 }}
+            key="gdv2"
+            initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.04 }}
             transition={{ duration: 0.55, ease: "easeOut" }}
             style={{
-              position: "fixed", inset: 0, zIndex: 100,
-              background: "#020407",
-              overflowY: "auto",
-              fontFamily: "'Space Mono', monospace",
-              color: "#e8eaf0",
+              position: "fixed", inset: 0, zIndex: 100, background: "#060410", overflowY: "auto",
+              fontFamily: "'Barlow',sans-serif", color: "#f0eeff"
             }}
           >
-            {/* Scanlines */}
+            {/* Grain */}
             <div style={{
-              position:"fixed", inset:0, zIndex:1, pointerEvents:"none",
-              background:"repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.12) 3px,rgba(0,0,0,.12) 4px)",
-              animation:"scanlines-move 8s linear infinite",
-            }} />
-            {/* Vignette */}
-            <div style={{
-              position:"fixed", inset:0, zIndex:1, pointerEvents:"none",
-              background:"radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,.55) 100%)",
+              position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none", opacity: .025,
+              backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")"
             }} />
 
-            {/* Content */}
-            <div style={{ position:"relative", zIndex:2, maxWidth:1120, margin:"0 auto", padding:"3.5rem 2rem 6rem" }}>
+            {/* Return button */}
+            <button onClick={returnToMain} style={{ position: "fixed", top: "1.5rem", right: "1.5rem", zIndex: 900, fontFamily: "'Fira Code',monospace", fontSize: ".6rem", letterSpacing: ".18em", color: "rgba(232,255,0,.5)", background: "transparent", border: "1px solid rgba(232,255,0,.18)", padding: ".6rem 1.1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: ".5rem", transition: "all .2s" }}
+              onMouseEnter={e => { const b = e.currentTarget; b.style.color = "#e8ff00"; b.style.borderColor = "rgba(232,255,0,.5)" }}
+              onMouseLeave={e => { const b = e.currentTarget; b.style.color = "rgba(232,255,0,.5)"; b.style.borderColor = "rgba(232,255,0,.18)" }}>
+              ◂ EXIT DIMENSION
+            </button>
 
-              {/* Top bar */}
-              <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:"1.5rem", marginBottom:"3.5rem" }}>
-                <div>
-                  <p style={{ fontFamily:"'Share Tech Mono',monospace", fontSize:".65rem", letterSpacing:".2em", color:"rgba(80,220,160,.45)", marginBottom:".4rem" }}>
-                    // ALTERNATE DIMENSION LOADED
-                  </p>
-                  <h2 style={{
-                    fontFamily:"'VT323',monospace", fontSize:"clamp(2.8rem,6vw,5rem)",
-                    color:"#50dca0", lineHeight:.95, margin:0,
-                    textShadow:"0 0 24px rgba(80,220,160,.38)",
-                    animation:"vt-glitch 7s infinite",
-                  }}>GAME DEV<br />PORTFOLIO</h2>
-                </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:".75rem", alignItems:"flex-end" }}>
-                  <span style={{
-                    fontFamily:"'Share Tech Mono',monospace", fontSize:".6rem",
-                    letterSpacing:".25em", color:"#50dca0",
-                    border:"1px solid rgba(80,220,160,.3)", padding:".3rem .8rem",
-                    animation:"badge-blink 1.8s step-end infinite",
-                  }}>◉ GAME DEV MODE ACTIVE</span>
-                  <button
-                    onClick={returnToMain}
-                    style={{
-                      fontFamily:"'Share Tech Mono',monospace", fontSize:".65rem",
-                      letterSpacing:".15em", color:"rgba(80,220,160,.55)",
-                      background:"transparent", border:"1px solid rgba(80,220,160,.18)",
-                      padding:".65rem 1.25rem", cursor:"pointer",
-                      display:"flex", alignItems:"center", gap:".6rem",
-                      transition:"all 0.2s",
-                    }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLButtonElement).style.color = "#50dca0"
-                      ;(e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(80,220,160,.5)"
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLButtonElement).style.color = "rgba(80,220,160,.55)"
-                      ;(e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(80,220,160,.18)"
-                    }}
-                  >
-                    ◂ RETURN TO MAIN SYSTEM
-                  </button>
-                </div>
-              </div>
+            <main style={{ paddingBottom: "3rem", position: "relative", zIndex: 2 }}>
 
-              {/* ── CRMBL featured card ── */}
-              <p style={{ fontFamily:"'Share Tech Mono',monospace", fontSize:".58rem", letterSpacing:".28em", color:"rgba(220,201,80,.65)", marginBottom:"1rem" }}>
-                // FEATURED PROJECT — LIVE PREVIEW
-              </p>
+              {/* ── HERO ── */}
+              <section style={{ padding: "6rem 3rem 4rem", position: "relative", overflow: "hidden", borderBottom: "1px solid rgba(232,255,0,.12)" }}>
+                <div style={{ position: "absolute", top: "-40%", left: "-10%", width: "70%", height: "200%", background: "radial-gradient(ellipse,rgba(232,255,0,.04) 0%,transparent 65%)", pointerEvents: "none" }} />
+                <p style={{ fontFamily: "'Fira Code',monospace", fontSize: ".65rem", letterSpacing: ".2em", color: "#e8ff00", opacity: .6, marginBottom: "1.5rem", animation: "gd-fade-up .6s ease both" }}>
+                  // GAME DEV DIMENSION · COORDINATES: ∞
+                </p>
+                <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: "clamp(1rem,2.5vw,1.4rem)", fontWeight: 400, letterSpacing: ".06em", color: "rgba(240,238,255,.45)", marginBottom: ".5rem", animation: "gd-fade-up .6s .1s ease both" }}>
+                  Ricardo Sánchez Meléndez
+                </p>
+                <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: "clamp(5rem,13vw,13rem)", lineHeight: .85, letterSpacing: "-.01em", textTransform: "uppercase", margin: 0, animation: "gd-fade-up .7s .15s ease both" }}>
+                  <span style={{ display: "block", color: "#f0eeff" }}>Game</span>
+                  <span style={{ display: "block", color: "transparent", WebkitTextStroke: "1.5px rgba(232,255,0,.7)", marginLeft: ".08em" }}>Developer</span>
+                </h2>
+                <p style={{ fontFamily: "'Fira Code',monospace", fontSize: ".9rem", color: "rgba(200,196,230,.75)", letterSpacing: ".08em", maxWidth: 480, lineHeight: 1.7, marginTop: "2rem", animation: "gd-fade-up .7s .3s ease both" }}>
+                  Building worlds where <span style={{ color: "#e8ff00" }}>systems meet play</span>.<br />
+                  Each game a different universe — different rules, different feel, same obsession with craft.
+                </p>
 
-              <div style={{
-                display:"grid", gridTemplateColumns:"1fr 1.1fr",
-                border:"1px solid rgba(80,220,160,.12)",
-                background:"#060a10", marginBottom:"3.5rem", overflow:"hidden",
-              }}>
-                {/* Live game canvas */}
-                <div style={{ position:"relative", minHeight:280, background:"#04060c", borderRight:"1px solid rgba(80,220,160,.08)" }}>
-                  <canvas
-                    ref={canvasRef}
-                    style={{ position:"absolute", inset:0, width:"100%", height:"100%" }}
-                  />
-                  <div style={{ position:"absolute", bottom:10, left:12, fontFamily:"'Share Tech Mono',monospace", fontSize:".52rem", color:"rgba(80,220,160,.3)", letterSpacing:".1em" }}>
-                    CRMBL v1.0 — LIVE SIMULATION
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div style={{ padding:"2rem", display:"flex", flexDirection:"column", gap:"1.1rem" }}>
-                  <div>
-                    <div style={{ fontFamily:"'VT323',monospace", fontSize:"3rem", color:"#50dca0", textShadow:"0 0 18px rgba(80,220,160,.3)", lineHeight:1 }}>CRMBL</div>
-                    <div style={{ fontFamily:"'Share Tech Mono',monospace", fontSize:".62rem", color:"#dcc950", letterSpacing:".18em", opacity:.75 }}>// SYSTEM REBUILD</div>
-                  </div>
-                  <p style={{ fontSize:".71rem", color:"rgba(232,234,240,.55)", lineHeight:1.75, margin:0 }}>
-                    A grid-based survival game where you play as a fragmented AI attempting to restore itself.
-                    Collect scattered <span style={{color:"#dcc950"}}>system fragments</span> while navigating
-                    a grid consumed by <span style={{color:"#d85060"}}>corruption</span>. Each adjacent
-                    corrupted cell drains your integrity. Survive the collapse.
-                  </p>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:".45rem" }}>
-                    {[
-                      ["PYTHON",       "rgba(220,201,80,.28)",  "#dcc950"],
-                      ["PYGAME",       "rgba(80,220,160,.28)",  "#50dca0"],
-                      ["GRID ROGUELITE","rgba(160,25,32,.4)",   "#d85060"],
-                      ["PROCEDURAL",   "rgba(85,96,112,.3)",    "#556070"],
-                    ].map(([label,border,color]) => (
-                      <span key={label} style={{ fontFamily:"'Share Tech Mono',monospace", fontSize:".56rem", letterSpacing:".1em", padding:".22rem .6rem", border:`1px solid ${border}`, color }}>{label}</span>
-                    ))}
-                  </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:".5rem", paddingTop:"1rem", borderTop:"1px solid rgba(80,220,160,.07)" }}>
-                    {[["20×20","GRID SIZE"],["60","TARGET FPS"],["∞","DIFFICULTY"]].map(([val,lbl]) => (
-                      <div key={lbl} style={{ textAlign:"center" }}>
-                        <div style={{ fontFamily:"'VT323',monospace", fontSize:"1.8rem", color:"#50dca0", textShadow:"0 0 10px rgba(80,220,160,.3)" }}>{val}</div>
-                        <div style={{ fontFamily:"'Share Tech Mono',monospace", fontSize:".48rem", color:"#556070", letterSpacing:".1em", marginTop:".2rem" }}>{lbl}</div>
+                {/* Skills marquee */}
+                <div style={{ marginTop: "2.5rem", overflow: "hidden", borderTop: "1px solid rgba(232,255,0,.12)", borderBottom: "1px solid rgba(232,255,0,.12)", padding: ".7rem 0", animation: "gd-fade-up .7s .4s ease both" }}>
+                  <div style={{ display: "flex", gap: 0, animation: "gd-marquee 28s linear infinite", width: "max-content" }}>
+                    {[...SKILLS, ...SKILLS].map((s, i) => (
+                      <div key={i} style={{ fontFamily: "'Fira Code',monospace", fontSize: ".72rem", letterSpacing: ".2em", color: "rgba(180,175,220,.7)", padding: "0 2.5rem", whiteSpace: "nowrap" }}>
+                        <span style={{ color: "#e8ff00", opacity: .7, marginRight: "2.5rem" }}>◈</span>{s}
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
+              </section>
 
-            </div>
+              {/* ── WORLDS ── */}
+              <section style={{ padding: "4rem 3rem" }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "1.5rem", marginBottom: "2.5rem", flexWrap: "wrap" }}>
+                  <h3 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: "2.2rem", letterSpacing: ".08em", textTransform: "uppercase", color: "#f0eeff", margin: 0 }}>Worlds</h3>
+                  <span style={{ fontFamily: "'Fira Code',monospace", fontSize: ".62rem", letterSpacing: ".15em", color: "#e8ff00", opacity: .6, border: "1px solid rgba(232,255,0,.2)", padding: ".25rem .65rem", animation: "gd-blink-border 2s step-end infinite" }}>◉ 1 RELEASED · ∞ QUEUED</span>
+                </div>
+
+                {/* Featured + sidebar layout */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 1, background: "rgba(232,255,0,.12)", border: "1px solid rgba(232,255,0,.12)" }}>
+
+                  {/* ─ CRMBL featured card ─ */}
+                  <div className="gd-featured" style={{ background: "#0c0820", display: "grid", gridTemplateRows: "auto 1fr", position: "relative", overflow: "hidden", transition: "background .3s" }}>
+                    {/* corner accent */}
+                    <div style={{ position: "absolute", top: 0, right: 0, width: 0, height: 0, borderStyle: "solid", borderWidth: "0 40px 40px 0", borderColor: "transparent #e8ff00 transparent transparent", opacity: .5 }} />
+
+                    {/* Canvas preview */}
+                    <div style={{ position: "relative", height: 280, background: "#030208", overflow: "hidden", borderBottom: "1px solid rgba(232,255,0,.12)" }}>
+                      <canvas ref={crmblRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+                      <div style={{ position: "absolute", top: 12, left: 14, fontFamily: "'Fira Code',monospace", fontSize: ".52rem", letterSpacing: ".14em", color: "rgba(232,255,0,.35)" }}>WORLD_001 · CRMBL</div>
+                      <div style={{ position: "absolute", bottom: 12, right: 14, fontFamily: "'Fira Code',monospace", fontSize: ".5rem", letterSpacing: ".15em", color: "#84cc16", border: "1px solid rgba(132,204,22,.3)", background: "rgba(132,204,22,.06)", padding: ".2rem .55rem", display: "flex", alignItems: "center", gap: ".4rem" }}>
+                        <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#84cc16", boxShadow: "0 0 6px #84cc16", display: "inline-block" }} /> RELEASED
+                      </div>
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ padding: "1.75rem 2rem 2rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: ".6rem", flexWrap: "wrap" }}>
+                        <span style={{ fontFamily: "'Fira Code',monospace", fontSize: ".55rem", letterSpacing: ".15em", padding: ".2rem .6rem", border: "1px solid rgba(255,60,60,.3)", color: "#ff3c3c", textTransform: "uppercase" }}>GRID ROGUELITE</span>
+                        <span style={{ fontFamily: "'Fira Code',monospace", fontSize: ".55rem", letterSpacing: ".15em", padding: ".2rem .6rem", border: "1px solid rgba(255,124,60,.3)", color: "#ff7c3c", textTransform: "uppercase" }}>SURVIVAL</span>
+                        <span style={{ fontFamily: "'Fira Code',monospace", fontSize: ".5rem", letterSpacing: ".12em", padding: ".2rem .55rem", background: "#1e1a35", color: "#4a4465" }}>PC</span>
+                        <span style={{ fontFamily: "'Fira Code',monospace", fontSize: ".5rem", letterSpacing: ".12em", padding: ".2rem .55rem", background: "#1e1a35", color: "#4a4465" }}>PYTHON</span>
+                      </div>
+
+                      <div>
+                        <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: "3.5rem", lineHeight: .9, letterSpacing: "-.01em", textTransform: "uppercase", color: "#f0eeff" }}>CRMBL</div>
+                        <div style={{ fontFamily: "'Fira Code',monospace", fontSize: ".6rem", letterSpacing: ".18em", color: "#e8ff00", opacity: .65, textTransform: "uppercase" }}>// System Rebuild</div>
+                      </div>
+
+                      <p style={{ fontSize: ".92rem", lineHeight: 1.7, color: "rgba(220,216,255,.8)", maxWidth: 560, margin: 0 }}>
+                        You are a fragmented AI. The grid is collapsing. Collect system fragments to rebuild your integrity before corruption spreads and consumes you entirely. A pure survival loop — no UI, no hand-holding. Just the grid and the decay.
+                      </p>
+
+                      {/* DNA bars */}
+                      <div style={{ paddingTop: "1rem", borderTop: "1px solid rgba(232,255,0,.07)" }}>
+                        <div style={{ fontFamily: "'Fira Code',monospace", fontSize: ".65rem", letterSpacing: ".18em", color: "rgba(180,175,220,.65)", marginBottom: ".75rem" }}>// GAME DNA</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: ".45rem" }}>
+                          {[["SURVIVAL", 85], ["STRATEGY", 60], ["TENSION", 90], ["NARRATIVE", 20]].map(([name, pct]) => (
+                            <div key={name as string} style={{ display: "grid", gridTemplateColumns: "80px 1fr 30px", alignItems: "center", gap: ".75rem" }}>
+                              <span style={{ fontFamily: "'Fira Code',monospace", fontSize: ".65rem", letterSpacing: ".1em", color: "rgba(180,175,220,.7)", textAlign: "right" }}>{name}</span>
+                              <div style={{ height: 3, background: "#1e1a35", position: "relative", overflow: "hidden" }}>
+                                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: "#e8ff00", boxShadow: "0 0 6px rgba(232,255,0,.4)" }} />
+                              </div>
+                              <span style={{ fontFamily: "'Fira Code',monospace", fontSize: ".62rem", color: "#e8ff00", opacity: .8, textAlign: "right" }}>{pct}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Tech */}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: ".4rem", paddingTop: "1rem", borderTop: "1px solid rgba(232,255,0,.07)" }}>
+                        {["Python 3.12", "Pygame 2.6", "Grid Systems", "Cellular Automata", "Procedural Difficulty"].map(t => (
+                          <span key={t} style={{ fontFamily: "'Fira Code',monospace", fontSize: ".65rem", letterSpacing: ".08em", padding: ".22rem .55rem", background: "#1e1a35", color: "rgba(210,206,255,.7)", border: "1px solid rgba(255,255,255,.1)" }}>{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ─ Upcoming worlds sidebar ─ */}
+                  <div style={{ background: "#0c0820", display: "flex", flexDirection: "column" }}>
+                    <div style={{ padding: "1.25rem 1.5rem", borderBottom: "1px solid rgba(232,255,0,.12)", fontFamily: "'Fira Code',monospace", fontSize: ".68rem", letterSpacing: ".18em", color: "rgba(74,68,101,.9)" }}>// UPCOMING WORLDS</div>
+
+                    {/* Upcoming 1 */}
+                    <div className="gd-upcoming" style={{ flex: 1, padding: "1.5rem", borderBottom: "1px solid rgba(232,255,0,.12)", display: "flex", flexDirection: "column", gap: ".9rem", position: "relative", overflow: "hidden", transition: "background .2s", background: "#0c0820" }}>
+                      <div style={{ height: 100, background: "#030208", position: "relative", overflow: "hidden" }}>
+                        <canvas ref={particleRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+                        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: ".4rem" }}>
+                          <span style={{ fontFamily: "'Fira Code',monospace", fontSize: ".65rem", letterSpacing: ".2em", color: "rgba(232,255,0,.55)", animation: "gd-loading 2s ease-in-out infinite" }}>WORLD DATA ENCRYPTED</span>
+                          <div style={{ width: "60%", height: 1, background: "linear-gradient(90deg,transparent,rgba(232,255,0,.3),transparent)", animation: "gd-bar-scan 2s linear infinite" }} />
+                        </div>
+                      </div>
+                      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: "1.8rem", letterSpacing: ".02em", textTransform: "uppercase", color: "rgba(240,238,255,.35)" }}>[ CLASSIFIED ]</div>
+                      <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>
+                        {["3D ACTION", "PC", "PROTOTYPE"].map(t => <span key={t} style={{ fontFamily: "'Fira Code',monospace", fontSize: ".65rem", letterSpacing: ".1em", padding: ".18rem .5rem", border: "1px solid rgba(255,255,255,.06)", color: "rgba(240,238,255,.45)" }}>{t}</span>)}
+                      </div>
+                      <div style={{ fontFamily: "'Fira Code',monospace", fontSize: ".62rem", letterSpacing: ".14em", color: "rgba(232,255,0,.5)" }}>◌ IN DEVELOPMENT</div>
+                    </div>
+
+                    {/* Upcoming 2 */}
+                    <div className="gd-upcoming" style={{ flex: 1, padding: "1.5rem", display: "flex", flexDirection: "column", gap: ".9rem", position: "relative", overflow: "hidden", transition: "background .2s", background: "#0c0820" }}>
+                      <div style={{ height: 100, background: "#030208", position: "relative", overflow: "hidden" }}>
+                        <canvas ref={hexRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+                        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: ".4rem" }}>
+                          <span style={{ fontFamily: "'Fira Code',monospace", fontSize: ".65rem", letterSpacing: ".2em", color: "rgba(232,255,0,.55)", animation: "gd-loading 2s ease-in-out infinite" }}>AWAITING CLEARANCE</span>
+                          <div style={{ width: "60%", height: 1, background: "linear-gradient(90deg,transparent,rgba(232,255,0,.3),transparent)", animation: "gd-bar-scan 2.5s linear infinite" }} />
+                        </div>
+                      </div>
+                      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: "1.8rem", letterSpacing: ".02em", textTransform: "uppercase", color: "rgba(240,238,255,.35)" }}>[ CLASSIFIED ]</div>
+                      <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>
+                        {["PUZZLE", "WEB", "CONCEPT"].map(t => <span key={t} style={{ fontFamily: "'Fira Code',monospace", fontSize: ".65rem", letterSpacing: ".1em", padding: ".18rem .5rem", border: "1px solid rgba(255,255,255,.06)", color: "rgba(240,238,255,.45)" }}>{t}</span>)}
+                      </div>
+                      <div style={{ fontFamily: "'Fira Code',monospace", fontSize: ".62rem", letterSpacing: ".14em", color: "rgba(232,255,0,.5)" }}>◌ EARLY CONCEPT</div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* ── TOOLBOX ── */}
+              <section style={{ padding: "4rem 3rem", borderTop: "1px solid rgba(232,255,0,.12)" }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "1.5rem", marginBottom: "2rem", flexWrap: "wrap" }}>
+                  <h3 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: "2.2rem", letterSpacing: ".08em", textTransform: "uppercase", color: "#f0eeff", margin: 0 }}>Toolbox</h3>
+                  <span style={{ fontFamily: "'Fira Code',monospace", fontSize: ".62rem", letterSpacing: ".15em", color: "#e8ff00", opacity: .4 }}>// CURRENT STACK</span>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 1, background: "rgba(232,255,0,.12)", border: "1px solid rgba(232,255,0,.12)" }}>
+                  {[
+                    { icon: "🐍", name: "Python", lvl: 90, lbl: "PROFICIENCY" },
+                    { icon: "🎮", name: "Pygame", lvl: 80, lbl: "PROFICIENCY" },
+                    { icon: "⚙️", name: "Unity", lvl: 20, lbl: "LEARNING", dim: true },
+                    { icon: "🧮", name: "Game Math", lvl: 70, lbl: "VECTORS / PHYSICS" },
+                    { icon: "🗺️", name: "Proc Gen", lvl: 75, lbl: "ALGORITHMS" },
+                    { icon: "🎨", name: "Pixel Art", lvl: 50, lbl: "PROFICIENCY" },
+                  ].map(t => (
+                    <div key={t.name} className="gd-tool-card" style={{ background: "#0c0820", padding: "1.25rem", transition: "background .2s", display: "flex", flexDirection: "column", gap: ".7rem" }}>
+                      <div style={{ fontSize: "1.4rem", lineHeight: 1 }}>{t.icon}</div>
+                      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: "1.1rem", letterSpacing: ".05em", textTransform: "uppercase", color: "#f0eeff" }}>{t.name}</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'Fira Code',monospace", fontSize: ".62rem", letterSpacing: ".1em", color: "rgba(180,175,220,.65)" }}>
+                          <span>{t.lbl}</span><span>{t.dim ? "LEARNING" : `${t.lvl}%`}</span>
+                        </div>
+                        <div style={{ height: 2, background: "#1e1a35", position: "relative", overflow: "hidden" }}>
+                          <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${t.lvl}%`, background: "#e8ff00", opacity: t.dim ? .35 : .6 }} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+            </main>
 
             {/* Status bar */}
-            <div style={{
-              position:"fixed", bottom:0, left:0, right:0, zIndex:10,
-              padding:".5rem 1.5rem",
-              background:"rgba(2,4,7,.92)", borderTop:"1px solid rgba(80,220,160,.07)",
-              display:"flex", alignItems:"center", gap:"2rem", flexWrap:"wrap",
-              fontFamily:"'Share Tech Mono',monospace", fontSize:".52rem",
-              color:"rgba(80,220,160,.35)", letterSpacing:".1em", pointerEvents:"none",
-            }}>
-              <span>◉ SYSTEM ACTIVE</span>
-              <span style={{color:"rgba(160,25,32,.55)"}}>▓ CORRUPTION: SPREADING</span>
-              <span style={{color:"rgba(220,201,80,.45)"}}>◈ FRAGMENTS: COLLECT THEM</span>
-              <span style={{marginLeft:"auto"}}>CRMBL ENGINE v1.0.0</span>
+            <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 10, background: "rgba(6,4,16,.95)", borderTop: "1px solid rgba(232,255,0,.08)", padding: ".45rem 1.5rem", display: "flex", alignItems: "center", gap: "2rem", flexWrap: "wrap", fontFamily: "'Fira Code',monospace", fontSize: ".5rem", letterSpacing: ".1em", color: "rgba(74,68,101,.9)", pointerEvents: "none" }}>
+              <span style={{ color: "#84cc16", display: "flex", alignItems: "center", gap: ".4rem" }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#84cc16", boxShadow: "0 0 6px #84cc16", display: "inline-block", animation: "gd-blink-dot 1s step-end infinite" }} />
+                ACTIVE WORLDS: 1
+              </span>
+              <span>GENRES UNLOCKED: 1 / ∞</span>
+              <span style={{ color: "rgba(232,255,0,.3)" }}>NEXT WORLD: ██████████</span>
+              <span style={{ marginLeft: "auto" }}>RICARDO.DEV // GAME DIMENSION</span>
             </div>
           </motion.div>
         )}
