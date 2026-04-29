@@ -8,7 +8,7 @@ import { Github, Linkedin, Mail, Download, ExternalLink, MapPin, ChevronDown } f
 import { Button } from "@/components/ui/button"
 import BootScreen from "@/components/BootScreen"
 import StarField from "@/components/StarField"
-import BlackHolePortal from "@/components/BlackHolePortal"
+// import BlackHolePortal from "@/components/BlackHolePortal" // 🎮 Game Dev mode — disabled for now, re-enable when ready
 import { GooeyText } from "@/components/ui/gooey-text-morphing"
 import { SocialIcons } from "@/components/ui/social-icons"
 
@@ -259,16 +259,16 @@ export default function Home() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-      if (sending) return
+    if (sending) return
 
-      if (!name || !email || !subject || !message) {
-        setStatusMessage("Please fill all fields.")
-        return
-      }
+    if (!name || !email || !subject || !message) {
+      setStatusMessage("Please fill all fields.")
+      return
+    }
 
-      setSending(true)
-      setStatusMessage(null)
-      
+    setSending(true)
+    setStatusMessage(null)
+
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
@@ -303,7 +303,7 @@ export default function Home() {
             className="relative"
           >
             <StarField />
-            <BlackHolePortal />
+            {/* <BlackHolePortal /> */}{/* 🎮 Game Dev mode — disabled for now, re-enable when ready */}
 
             {/* Grid overlay */}
             <div
@@ -383,11 +383,11 @@ export default function Home() {
                   >
                     <GooeyText
                       texts={[
-                        "Full Stack Developer",
-                        "Cloud & Serverless Engineer",
-                        "AWS Lambda Specialist",
-                        "AI-Powered Builder",
-                        "Backend Systems Expert",
+                        "Software Developer",
+                        "Backend Systems",
+                        "AWS Lambda & TypeScript",
+                        "Serverless Infrastructure",
+                        "Financial Services Backend",
                       ]}
                       morphTime={1.2}
                       cooldownTime={2}
@@ -405,8 +405,7 @@ export default function Home() {
                     className="text-base md:text-lg max-w-xl font-mono"
                     style={{ color: "rgba(255,255,255,0.45)", lineHeight: "1.7" }}
                   >
-                    Software developer focused on building scalable backend systems,
-                    serverless architectures, and AI-powered applications.
+                    Software developer focused on scalable backend systems and serverless architecture.
                   </motion.p>
 
                   {/* CTA Buttons */}
@@ -556,28 +555,35 @@ export default function Home() {
                         className="text-base leading-relaxed"
                         style={{ color: "rgba(255,255,255,0.65)" }}
                       >
-                        Ricardo Sánchez is a <span style={{ color: "#FF6B2B" }}>Full Stack Developer</span> specializing
-                        in cloud-native architectures, backend systems, and AI-driven applications.
-                        Trained at <span style={{ color: "rgba(255,255,255,0.85)" }}>Holberton School</span> with a foundation
-                        in data structures, C programming, APIs, and DevOps.
+                        I&apos;m a software developer focused on backend systems.
+                        I work mostly in <span style={{ color: "#FF6B2B" }}>TypeScript</span>, building services that run serverless on AWS.
                       </p>
                       <p
                         className="text-base leading-relaxed"
                         style={{ color: "rgba(255,255,255,0.65)" }}
                       >
-                        Currently at <span style={{ color: "#FF6B2B" }}>Evertec, Inc.</span> building serverless
-                        financial integrations using AWS Lambda and TypeScript — implementing PCI-DSS compliant
-                        systems, CI/CD pipelines, and AI-assisted development workflows.
+                        I studied at <span style={{ color: "rgba(255,255,255,0.85)" }}>Holberton School</span> in
+                        San Juan, where I built a solid foundation in computer science and software development,
+                        from low-level C and data structures all the way through APIs and system design.
+                      </p>
+                      <p
+                        className="text-base leading-relaxed"
+                        style={{ color: "rgba(255,255,255,0.65)" }}
+                      >
+                        Right now I&apos;m at <span style={{ color: "#FF6B2B" }}>Evertec, Inc.</span>, building
+                        and maintaining backend services for financial products. The work covers everything from
+                        writing and testing Lambda functions to reviewing code and monitoring service performance
+                        through CloudWatch Logs Insights.
                       </p>
 
                       <div className="grid grid-cols-2 gap-3 pt-2">
                         {[
-                          "Serverless architecture",
+                          "AWS Lambda development",
+                          "TypeScript / Node.js",
+                          "Financial services backend",
                           "REST API development",
-                          "Financial systems integration",
-                          "AI-assisted dev workflows",
-                          "Cloud infrastructure & CI/CD",
-                          "Clean architecture patterns",
+                          "CI/CD & AWS CodePipeline",
+                          "Clean architecture",
                         ].map((item) => (
                           <div key={item} className="flex items-center gap-2 text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
                             <span style={{ color: "#FF6B2B", fontSize: "8px" }}>◆</span>
@@ -621,8 +627,8 @@ export default function Home() {
                         items: ["Jest", "Vitest", "Postman", "ts-mockito", "Jira", "Git", "Linux"],
                       },
                       {
-                        category: "AI Development",
-                        items: ["Claude AI", "Claude Code", "GitHub Copilot", "Prompt Engineering"],
+                        category: "Security & Observability",
+                        items: ["ISO 9564 (PIN Block)", "3DES", "PCI-DSS", "Lambda Powertools", "Structured Logging", "Latency Tracing"],
                       },
                       {
                         category: "Frontend",
@@ -647,13 +653,14 @@ export default function Home() {
                     location="San Juan, PR"
                     period="April 2025 – Present"
                     points={[
-                      "Developed and maintained AWS Lambda functions in TypeScript/Node.js serving as middleware between banking systems and consumer applications",
-                      "Built mock services using Python and DynamoDB to simulate endpoints, enabling parallel development and testing",
-                      "Implemented regex-based input validation across multiple financial services to ensure PCI-DSS compliance",
-                      "Wrote unit tests validating service logic, data mapping, and error handling across integration endpoints",
-                      "Managed Git workflows including branch creation, merging, and code reviews using AWS CodeCommit and CI/CD pipelines",
-                      "Monitored and debugged production services using CloudWatch logs and tested APIs with Postman",
-                      "Utilized Claude Code and GitHub Copilot for AI-assisted code generation, debugging, and architectural design",
+                      "Built a cryptographic PIN Block service implementing ISO 9564 Format 0. The orchestrator accepts PAN and PIN as strings, performs XOR composition, and encrypts with 3DES, enabling secure Change PIN and Validate PIN flows compliant with payment industry standards",
+                      "Set up structured logging across services using AWS Lambda Powertools, with a typed context interface that captures request IDs and execution metadata, plus latency timestamps around external HTTP calls, cache credential retrieval, and DynamoDB queries",
+                      "Tightened service contracts using TypeScript enums, strict request/response types, and regex input validations, eliminating implicit any types across every service boundary",
+                      "Built the middleware layer bridging legacy banking infrastructure with consumer-facing APIs, covering card details, transaction history, balance queries, and payment processing at sub-200ms p95 latency",
+                      "Designed a DynamoDB-backed mock service layer replicating production endpoint contracts. Constructed full product and transaction datasets, wired into the service layer, cutting integration test cycle time by ~40%",
+                      "Enforced PCI-DSS compliance through input sanitization pipelines across 8+ financial endpoints, and built Jest/ts-mockito test suites achieving 85%+ coverage across all service handlers",
+                      "Managed release and rollback branches for QSR cycles via AWS CodeCommit, conducted peer code reviews, and enforced automated quality gates through AWS CodePipeline before every deployment",
+                      "Used CloudWatch Logs Insights to diagnose cold-start regressions, timeout spikes, and latency anomalies across services, then validated all endpoints across Dev and QA with Postman",
                     ]}
                     isLast
                   />
@@ -670,7 +677,7 @@ export default function Home() {
                         <div>
                           <p className="font-orbitron font-bold text-white">Holberton Coding School</p>
                           <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>
-                            Certificate — Foundations of Computer Science & Software Engineering
+                            Certificate in Foundations of Computer Science & Software Engineering
                           </p>
                           <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
                             San Juan, Puerto Rico
@@ -696,24 +703,8 @@ export default function Home() {
               <section id="projects" className="py-24 px-4">
                 <div className="max-w-6xl mx-auto">
                   <SectionHeading>Projects</SectionHeading>
-                  <div className="grid md:grid-cols-3 gap-6">
+                  <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                     <Reveal delay={0.1}>
-                      <ProjectCard
-                        title="FinPulse"
-                        description="AI-Powered Personal Finance Platform with transaction tracking, smart budgets, and AI-generated financial insights."
-                        badge="Latest"
-                        stack={["Node.js", "TypeScript", "PostgreSQL", "React", "Supabase", "Claude AI", "Docker", "GitHub Actions"]}
-                        points={[
-                          "Full-stack budgeting platform with transaction tracking and analytics dashboard",
-                          "REST API with clean architecture, input validation, and secure JWT authentication",
-                          "Integrated Claude AI for spending summaries and financial trend analysis with caching",
-                          "Responsive React dashboard with real-time charts using Recharts",
-                          "CI/CD pipeline with GitHub Actions and Docker containerization",
-                        ]}
-                        link="https://fin-pulse-jet.vercel.app/"
-                      />
-                    </Reveal>
-                    <Reveal delay={0.2}>
                       <ProjectCard
                         title="Website Monitor"
                         description="Real-time website monitoring platform that tracks uptime, performance metrics, and sends instant downtime alerts."
@@ -727,18 +718,18 @@ export default function Home() {
                         link="https://watchly-8x9.pages.dev"
                       />
                     </Reveal>
-                    <Reveal delay={0.3}>
+                    <Reveal delay={0.2}>
                       <ProjectCard
-                        title="BarberMate"
-                        description="Full-stack barber appointment booking platform that allows customers to create accounts and access a secure authentication system for booking and managing barber appointments."
-                        stack={["Next.js", "React", "TypeScript", "TailwindCSS", "Vercel"]}
+                        title="HBnB Evolution"
+                        description="Full-stack Airbnb-style rental platform with REST APIs for user management, place listings, reviews, and amenity categorization."
+                        stack={["Python", "Flask", "SQLAlchemy", "PostgreSQL", "Docker", "JWT", "Nginx", "Gunicorn"]}
                         points={[
-                          "Secure authentication system",
-                          "Customer account creation and login",
-                          "Appointment booking platform (future features)",
-                          "Clean and responsive UI for booking services",
+                          "REST APIs covering users, place listings, reviews, and amenities — modeled after Airbnb's core domain",
+                          "Normalized PostgreSQL schemas with ORM-driven persistence via SQLAlchemy",
+                          "JWT-based authentication with role-based access control scoping admin vs. user permissions",
+                          "Containerized with Docker Compose — Nginx as reverse proxy, Gunicorn as WSGI server",
                         ]}
-                        link="https://barbermate-app.vercel.app/auth"
+                        link="https://github.com/RickMelendez"
                       />
                     </Reveal>
                   </div>
@@ -777,7 +768,7 @@ export default function Home() {
                           label: "linkedin.com/in/ricardosanchez01",
                           href: "https://www.linkedin.com/in/ricardosanchez01"
                         },
-                        ].map((item) => (
+                      ].map((item) => (
                         <Link
                           key={item.label}
                           href={item.href}
@@ -897,7 +888,7 @@ export default function Home() {
                             e.currentTarget.style.boxShadow = "0 0 20px rgba(255,107,43,0.3)"
                           }
                         }}
-                        >
+                      >
                         {sending ? "Sending..." : "Send Message"}
                       </button>
                       {statusMessage && (
