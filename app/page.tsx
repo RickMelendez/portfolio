@@ -452,7 +452,7 @@ export default function Home() {
                         color: "rgba(255,255,255,0.6)",
                       }}
                     >
-                      <Link href="https://docs.google.com/document/d/1gZPXoJJanab-Oz854YUVkGCgoPlV-a0F6Z_V6hnViz4/edit?usp=sharing" target="_blank" rel="noopener noreferrer">
+                      <Link href="https://docs.google.com/document/d/1EeJ0ZIdcICSkOnW_ZwjjMb-sVZNZY25o1ZUs_rtnE6A/edit?usp=sharing" target="_blank" rel="noopener noreferrer">
                         <Download className="h-4 w-4 mr-2" />
                         Resume
                       </Link>
