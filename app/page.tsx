@@ -326,33 +326,6 @@ export default function Home() {
                   transition={{ duration: 0.8, delay: 0.2 }}
                   className="flex flex-col items-center gap-6 max-w-4xl mx-auto"
                 >
-                  {/* Avatar */}
-                  <div className="relative w-32 h-32 mb-2">
-                    <div
-                      className="absolute inset-0 rounded-full"
-                      style={{
-                        background: "radial-gradient(circle, rgba(255,107,43,0.3) 0%, transparent 70%)",
-                        animation: "glow-pulse 3s ease-in-out infinite",
-                      }}
-                    />
-                    <div
-                      className="w-full h-full rounded-full overflow-hidden"
-                      style={{
-                        border: "2px solid rgba(255,107,43,0.4)",
-                        boxShadow: "0 0 25px rgba(255,107,43,0.3)",
-                      }}
-                    >
-                      <Image
-                        src="/profile.jpg"
-                        alt="Ricardo Sánchez Meléndez"
-                        width={128}
-                        height={128}
-                        className="object-cover w-full h-full"
-                        priority
-                      />
-                    </div>
-                  </div>
-
                   {/* Name */}
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -479,7 +452,7 @@ export default function Home() {
                         color: "rgba(255,255,255,0.6)",
                       }}
                     >
-                      <Link href="https://docs.google.com/document/d/1k_jyD-9q1YfIbnD_xZRrx2BQk9tZ1jmS/edit?usp=sharing&ouid=111897677680154544833&rtpof=true&sd=true" target="_blank" rel="noopener noreferrer">
+                      <Link href="https://docs.google.com/document/d/1gZPXoJJanab-Oz854YUVkGCgoPlV-a0F6Z_V6hnViz4/edit?usp=sharing" target="_blank" rel="noopener noreferrer">
                         <Download className="h-4 w-4 mr-2" />
                         Resume
                       </Link>
